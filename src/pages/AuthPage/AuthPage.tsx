@@ -30,11 +30,32 @@ export const AuthPage: FC = () => {
   const { open } = useAppKit();
   const [authState, setAuthState] = useState<AuthState>({ step: "connecting" });
 
-  // Get nonce from start params
-  const startParam = initDataStartParam();
-
   useEffect(() => {
+    // Get nonce from start params inside useEffect
+    const startParam = initDataStartParam();
     console.log("🔍 [SIWE FLOW] Step 1: Checking start params...");
+    console.log("🌐 [SIWE FLOW] Current URL:", window.location.href);
+    console.log("🌐 [SIWE FLOW] URL search params:", window.location.search);
+    console.log("🌐 [SIWE FLOW] URL hash:", window.location.hash);
+
+    // Alternative way to get start params
+    // const urlParams = new URLSearchParams(window.location.search);
+    // const startAppParam = urlParams.get("startapp");
+    // console.log("🔍 [SIWE FLOW] startapp from URL:", startAppParam);
+
+    // // Check Telegram WebApp data
+    // if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+    //   const tgWebApp = (window as any).Telegram.WebApp;
+    //   console.log(
+    //     "📱 [SIWE FLOW] Telegram WebApp start param:",
+    //     tgWebApp.initDataUnsafe?.start_param,
+    //   );
+    //   console.log(
+    //     "📱 [SIWE FLOW] Telegram WebApp initData:",
+    //     tgWebApp.initData,
+    //   );
+    // }
+
     if (startParam) {
       try {
         console.log("📝 [SIWE FLOW] Raw start param received:", startParam);
@@ -74,9 +95,33 @@ export const AuthPage: FC = () => {
         setAuthState((prev) => ({ ...prev, nonce: startParam }));
       }
     } else {
-      console.log("⚠️ [SIWE FLOW] No start params received");
+      console.log("⚠️ [SIWE FLOW] No start params from initDataStartParam()");
+
+      // Fallback: try to get from URL directly
+      const urlParams = new URLSearchParams(window.location.search);
+      const startAppParam = urlParams.get("startapp");
+
+      if (startAppParam) {
+        console.log("🔄 [SIWE FLOW] Found startapp in URL, trying to parse...");
+        try {
+          const decoded = decodeURIComponent(startAppParam);
+          console.log("🔄 [SIWE FLOW] Decoded URL param:", decoded);
+          const parsedParam = JSON.parse(decoded);
+          if (parsedParam && parsedParam.nonce) {
+            console.log(
+              "✅ [SIWE FLOW] Nonce extracted from URL fallback:",
+              parsedParam.nonce,
+            );
+            setAuthState((prev) => ({ ...prev, nonce: parsedParam.nonce }));
+          }
+        } catch (error) {
+          console.error("❌ [SIWE FLOW] Failed to parse URL fallback:", error);
+        }
+      } else {
+        console.log("⚠️ [SIWE FLOW] No startapp parameter found in URL");
+      }
     }
-  }, [startParam]);
+  }, []); // 빈 dependency array로 한 번만 실행
 
   useEffect(() => {
     console.log("🔍 [SIWE FLOW] Step 2: Checking wallet connection...");
@@ -244,6 +289,10 @@ Issued At: ${issuedAt}`;
             <Title level="2">Wallet Connected</Title>
             <Text>Address: {address}</Text>
             <Text>Preparing authentication...</Text>
+            <Caption style={{ marginTop: "10px", color: "#666" }}>
+              Debug: nonce={authState.nonce ? "✅" : "❌"} | address=
+              {address ? "✅" : "❌"} | connected={isConnected ? "✅" : "❌"}
+            </Caption>
           </Section>
         );
 
