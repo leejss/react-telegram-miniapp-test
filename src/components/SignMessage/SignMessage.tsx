@@ -47,7 +47,6 @@ export function SignMessage() {
           message: message,
           signature: result,
           timestamp: new Date().toISOString(),
-          userId: (launchParams.tgWebAppInitData as any).user?.id || "unknown",
         };
 
         console.log("📦 Data to send:", signatureData);
