@@ -1,6 +1,10 @@
 "use client";
 
-import { retrieveLaunchParams, sendData } from "@telegram-apps/sdk-react";
+import {
+  retrieveLaunchParams,
+  sendData,
+  popup,
+} from "@telegram-apps/sdk-react";
 import { Button } from "@telegram-apps/telegram-ui";
 import { useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
@@ -27,62 +31,68 @@ export function SignMessage() {
         setIsSigningComplete(true);
 
         // 텔레그램에 결과 전달
-        if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-          console.log("🚀 Telegram WebApp detected, preparing to send data...");
+        console.log("🚀 Preparing to send data to Telegram...");
 
-          const launchParams = retrieveLaunchParams();
-          console.log("📱 Launch params:", launchParams);
+        const launchParams = retrieveLaunchParams();
+        console.log("📱 Launch params:", launchParams);
+        console.log("🔍 Execution environment check:");
+        console.log("   - Platform:", launchParams.tgWebAppPlatform);
+        console.log("   - Version:", launchParams.tgWebAppVersion);
+        console.log("   - Start param:", launchParams.tgWebAppStartParam);
+        console.log("   - User agent:", navigator.userAgent);
+        console.log("   - Current URL:", window.location.href);
 
-          const signatureData = {
-            action: "signMessage",
-            message: message,
-            signature: result,
-            timestamp: new Date().toISOString(),
-            userId:
-              (launchParams.tgWebAppInitData as any).user?.id || "unknown",
-          };
+        const signatureData = {
+          action: "signMessage",
+          message: message,
+          signature: result,
+          timestamp: new Date().toISOString(),
+          userId: (launchParams.tgWebAppInitData as any).user?.id || "unknown",
+        };
 
-          console.log("📦 Data to send:", signatureData);
-          console.log(
-            "📏 Data size:",
-            JSON.stringify(signatureData).length,
-            "bytes",
-          );
+        console.log("📦 Data to send:", signatureData);
+        console.log(
+          "📏 Data size:",
+          JSON.stringify(signatureData).length,
+          "bytes",
+        );
 
-          // 텔레그램 WebApp에 서명 결과 전달
-          try {
-            console.log("📤 Calling sendData...");
+        // 텔레그램 WebApp에 서명 결과 전달
+        try {
+          console.log("📤 Calling sendData...");
 
-            // Method 1: Using SDK sendData function
-            if (sendData.isAvailable()) {
-              console.log("🎯 Using SDK sendData method");
-              sendData(JSON.stringify(signatureData));
-              console.log("✅ SDK sendData called successfully!");
-            } else {
-              console.log("🔄 Fallback to window.Telegram.WebApp.sendData");
-              window.Telegram.WebApp.sendData(JSON.stringify(signatureData));
-              console.log("✅ Direct sendData called successfully!");
-            }
-
-            console.log("📋 Sent data:", JSON.stringify(signatureData));
-          } catch (sendError) {
-            console.error("❌ Failed to send data to Telegram:", sendError);
+          if (sendData.isAvailable()) {
+            console.log("🎯 Using SDK sendData method");
+            sendData(JSON.stringify(signatureData));
+            console.log("✅ SDK sendData called successfully!");
+            console.log("⚠️  App should close automatically now...");
+          } else {
+            console.log("❌ sendData is not available!");
+            console.log("🔍 This might be because:");
+            console.log("   1. Not running in Telegram WebApp");
+            console.log("   2. Not launched via keyboard button");
+            console.log("   3. Running in development/browser mode");
           }
 
-          // 성공 알림 표시
-          window.Telegram.WebApp.showAlert(
-            "메시지 서명이 완료되어 텔레그램에 전달되었습니다!",
-          );
-        } else {
-          console.log("Telegram WebApp not available, signature:", result);
+          console.log("📋 Sent data:", JSON.stringify(signatureData));
+        } catch (sendError) {
+          console.error("❌ Failed to send data to Telegram:", sendError);
         }
+
+        popup.show({
+          title: "서명 완료",
+          message: "메시지 서명이 완료되어 텔레그램에 전달되었습니다!",
+          buttons: [{ id: "ok", type: "default", text: "확인" }],
+        });
       }
     } catch (err) {
       console.error("Sign message error:", err);
 
-      if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-        window.Telegram.WebApp.showAlert("서명 중 오류가 발생했습니다.");
-      }
+      popup.show({
+        title: "오류",
+        message: "서명 중 오류가 발생했습니다.",
+        buttons: [{ id: "ok", type: "default", text: "확인" }],
+      });
     }
   };
 
@@ -148,12 +158,11 @@ export function SignMessage() {
   );
 }
 
-// 전역 Telegram 타입 선언
+// 전역 Telegram 타입 선언 (fallback용)
 declare global {
   interface Window {
     Telegram?: {
       WebApp: {
-        sendData: (data: string) => void;
         showAlert: (message: string) => void;
       };
     };
