@@ -7,6 +7,7 @@ import {
   sendData,
   miniApp,
   popup,
+  initData,
 } from "@telegram-apps/sdk";
 import { Page } from "@/components/Page";
 import {
@@ -32,7 +33,8 @@ export const AuthPage: FC = () => {
 
   useEffect(() => {
     // Get nonce from start params inside useEffect
-    const startParam = initDataStartParam();
+    const startParam = initData.startParam();
+    console.log("🔍 [SIWE FLOW] startParam:", startParam);
     console.log("🔍 [SIWE FLOW] Step 1: Checking start params...");
     console.log("🌐 [SIWE FLOW] Current URL:", window.location.href);
     console.log("🌐 [SIWE FLOW] URL search params:", window.location.search);
@@ -56,69 +58,104 @@ export const AuthPage: FC = () => {
     //   );
     // }
 
-    if (startParam) {
+    // Helper function to process start param
+    const processStartParam = (param: string, source: string) => {
       try {
-        console.log("📝 [SIWE FLOW] Raw start param received:", startParam);
-        const parsedParam = JSON.parse(startParam);
+        console.log(`📝 [SIWE FLOW] Raw start param from ${source}:`, param);
+
+        // Try to decode if it looks URL encoded
+        let decodedParam = param;
+        if (param.includes("%")) {
+          console.log(
+            "🔄 [SIWE FLOW] Start param appears URL encoded, decoding...",
+          );
+          decodedParam = decodeURIComponent(param);
+          console.log("📝 [SIWE FLOW] Decoded start param:", decodedParam);
+        }
+
+        const parsedParam = JSON.parse(decodedParam);
         console.log("📝 [SIWE FLOW] Parsed start param:", parsedParam);
 
         if (parsedParam && parsedParam.nonce) {
           console.log(
-            "✅ [SIWE FLOW] Nonce extracted successfully:",
+            `✅ [SIWE FLOW] Nonce extracted successfully from ${source}:`,
             parsedParam.nonce,
           );
           setAuthState((prev) => ({ ...prev, nonce: parsedParam.nonce }));
           console.log("🔄 [SIWE FLOW] Auth state updated with nonce");
+          return true; // Successfully processed
         } else {
-          console.error("❌ [SIWE FLOW] No nonce found in start params");
-          if (popup.open.isAvailable()) {
-            popup.open({
-              title: "Error",
-              message: "No nonce found in start parameters.",
-              buttons: [{ id: "ok", type: "default", text: "OK" }],
-            });
-          }
+          console.error(
+            `❌ [SIWE FLOW] No nonce found in start params from ${source}`,
+          );
+          return false;
         }
       } catch (error) {
-        console.error("❌ [SIWE FLOW] Failed to parse start params:", error);
+        console.error(
+          `❌ [SIWE FLOW] Failed to parse start params from ${source}:`,
+          error,
+        );
+        // Fallback: treat param as nonce directly (for backward compatibility)
+        console.log(
+          `🔄 [SIWE FLOW] Using fallback from ${source}: treating param as nonce directly`,
+        );
+        setAuthState((prev) => ({
+          ...prev,
+          nonce: param,
+        }));
+        return true; // Processed with fallback
+      }
+    };
+
+    // Try initData.startParam() first
+    if (startParam) {
+      console.log("📝 [SIWE FLOW] Got start param from initData.startParam()");
+      const processed = processStartParam(startParam, "initData.startParam()");
+
+      if (!processed) {
+        // Show error popup if parsing failed and no fallback worked
         if (popup.open.isAvailable()) {
           popup.open({
             title: "Error",
-            message: "Failed to parse start parameters.",
+            message: "No nonce found in start parameters.",
             buttons: [{ id: "ok", type: "default", text: "OK" }],
           });
         }
-        // Fallback: treat startParam as nonce directly (for backward compatibility)
-        console.log(
-          "🔄 [SIWE FLOW] Using fallback: treating startParam as nonce directly",
-        );
-        setAuthState((prev) => ({ ...prev, nonce: startParam }));
       }
     } else {
-      console.log("⚠️ [SIWE FLOW] No start params from initDataStartParam()");
+      console.log(
+        "⚠️ [SIWE FLOW] initData.startParam() returned undefined, checking URL params...",
+      );
 
-      // Fallback: try to get from URL directly
+      // Fallback: try to get from URL search params
       const urlParams = new URLSearchParams(window.location.search);
       const startAppParam = urlParams.get("startapp");
 
       if (startAppParam) {
-        console.log("🔄 [SIWE FLOW] Found startapp in URL, trying to parse...");
-        try {
-          const decoded = decodeURIComponent(startAppParam);
-          console.log("🔄 [SIWE FLOW] Decoded URL param:", decoded);
-          const parsedParam = JSON.parse(decoded);
-          if (parsedParam && parsedParam.nonce) {
-            console.log(
-              "✅ [SIWE FLOW] Nonce extracted from URL fallback:",
-              parsedParam.nonce,
-            );
-            setAuthState((prev) => ({ ...prev, nonce: parsedParam.nonce }));
+        console.log("🔄 [SIWE FLOW] Found startapp in URL search params");
+        const processed = processStartParam(startAppParam, "URL search params");
+
+        if (!processed) {
+          // Show error popup if URL fallback also failed
+          if (popup.open.isAvailable()) {
+            popup.open({
+              title: "Error",
+              message: "Failed to parse start parameters from URL.",
+              buttons: [{ id: "ok", type: "default", text: "OK" }],
+            });
           }
-        } catch (error) {
-          console.error("❌ [SIWE FLOW] Failed to parse URL fallback:", error);
         }
       } else {
-        console.log("⚠️ [SIWE FLOW] No startapp parameter found in URL");
+        console.log(
+          "⚠️ [SIWE FLOW] No startapp parameter found in URL search params either",
+        );
+        if (popup.open.isAvailable()) {
+          popup.open({
+            title: "Error",
+            message: "No start parameters found. Please launch from bot.",
+            buttons: [{ id: "ok", type: "default", text: "OK" }],
+          });
+        }
       }
     }
   }, []); // 빈 dependency array로 한 번만 실행
