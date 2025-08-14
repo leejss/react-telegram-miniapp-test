@@ -17,9 +17,7 @@ if (!projectId) {
 // Define supported networks (Base for production, Base Sepolia for development)
 const isProd = import.meta.env.PROD;
 export const networks: [Chain, ...Chain[]] = [isProd ? base : baseSepolia];
-export const networkIds = networks.map(network => network.id);
-
-// Create the Wagmi adapter instance
+export const networkIds = networks.map((network) => network.id);
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,

@@ -20,26 +20,21 @@ const metadata = {
   icons: ["https://telegram-mini-apps.github.io/reactjs-template/icon.png"],
 };
 
-// Initialize AppKit outside the component render cycle
-if (!projectId) {
-  console.error("AppKit Initialization Error: Project ID is missing.");
-} else {
-  createAppKit({
-    adapters: [wagmiAdapter],
-    projectId: projectId!,
-    networks: networks,
-    defaultNetwork: base,
-    metadata,
-    siweConfig,
-    features: {
-      analytics: true,
-      email: false,
-      socials: false,
-      swaps: false,
-      onramp: false,
-    },
-  });
-}
+createAppKit({
+  adapters: [wagmiAdapter],
+  projectId: import.meta.env.VITE_PROJECT_ID || "",
+  networks: networks,
+  defaultNetwork: base,
+  metadata,
+  siweConfig,
+  features: {
+    analytics: true,
+    email: false,
+    socials: false,
+    swaps: false,
+    onramp: false,
+  },
+});
 
 export default function ContextProvider({
   children,
