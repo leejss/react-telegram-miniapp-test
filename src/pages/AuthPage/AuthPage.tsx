@@ -110,6 +110,7 @@ Issued At: ${issuedAt}`;
         payload: {
           address,
           signature,
+          message,
         },
       });
 
