@@ -19,9 +19,7 @@ const metadata = {
   icons: ["https://telegram-mini-apps.github.io/reactjs-template/icon.png"],
 };
 
-// Debug: 프로젝트 ID 확인
 const projectId = import.meta.env.VITE_PROJECT_ID;
-console.log("Project ID:", projectId);
 
 if (!projectId) {
   console.error(
@@ -34,12 +32,9 @@ createAppKit({
   projectId: projectId || "",
   networks: networks,
   metadata,
-  // QR 코드 문제 해결을 위해 SIWE 임시 제거
-  // siweConfig,
+  // siweConfig 제거: AuthPage에서 커스텀 SIWE 플로우 사용
   features: {
-    // analytics: true,
-    email: false,
-    socials: [],
+    analytics: true,
   },
 });
 

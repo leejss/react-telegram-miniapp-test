@@ -34,15 +34,22 @@ export const AuthPage: FC = () => {
   const startParam = initDataStartParam();
 
   useEffect(() => {
+    console.log("🔍 [SIWE FLOW] Step 1: Checking start params...");
     if (startParam) {
       try {
-        console.log("Start param:", startParam);
+        console.log("📝 [SIWE FLOW] Raw start param received:", startParam);
         const parsedParam = JSON.parse(startParam);
+        console.log("📝 [SIWE FLOW] Parsed start param:", parsedParam);
+
         if (parsedParam && parsedParam.nonce) {
-          console.log("Extracted nonce:", parsedParam.nonce);
+          console.log(
+            "✅ [SIWE FLOW] Nonce extracted successfully:",
+            parsedParam.nonce,
+          );
           setAuthState((prev) => ({ ...prev, nonce: parsedParam.nonce }));
+          console.log("🔄 [SIWE FLOW] Auth state updated with nonce");
         } else {
-          console.error("No nonce found in start params");
+          console.error("❌ [SIWE FLOW] No nonce found in start params");
           if (popup.open.isAvailable()) {
             popup.open({
               title: "Error",
@@ -52,7 +59,7 @@ export const AuthPage: FC = () => {
           }
         }
       } catch (error) {
-        console.error("Failed to parse start params:", error);
+        console.error("❌ [SIWE FLOW] Failed to parse start params:", error);
         if (popup.open.isAvailable()) {
           popup.open({
             title: "Error",
@@ -61,27 +68,61 @@ export const AuthPage: FC = () => {
           });
         }
         // Fallback: treat startParam as nonce directly (for backward compatibility)
+        console.log(
+          "🔄 [SIWE FLOW] Using fallback: treating startParam as nonce directly",
+        );
         setAuthState((prev) => ({ ...prev, nonce: startParam }));
       }
+    } else {
+      console.log("⚠️ [SIWE FLOW] No start params received");
     }
   }, [startParam]);
 
   useEffect(() => {
+    console.log("🔍 [SIWE FLOW] Step 2: Checking wallet connection...");
+    console.log("📊 [SIWE FLOW] Current state:", {
+      isConnected,
+      address,
+      hasNonce: !!authState.nonce,
+      authStep: authState.step,
+    });
+
     if (isConnected && address && authState.nonce) {
+      console.log("✅ [SIWE FLOW] All conditions met, starting SIWE flow...");
       handleSIWEFlow();
+    } else {
+      console.log("⚠️ [SIWE FLOW] Waiting for conditions:", {
+        needsConnection: !isConnected,
+        needsAddress: !address,
+        needsNonce: !authState.nonce,
+      });
     }
   }, [isConnected, address, authState.nonce]);
 
   const handleSIWEFlow = async () => {
-    if (!address || !authState.nonce) return;
+    console.log("🚀 [SIWE FLOW] Step 3: Starting SIWE message creation...");
+    if (!address || !authState.nonce) {
+      console.error("❌ [SIWE FLOW] Missing required data:", {
+        address,
+        nonce: authState.nonce,
+      });
+      return;
+    }
 
     try {
+      console.log("🔄 [SIWE FLOW] Setting state to 'signing'...");
       setAuthState((prev) => ({ ...prev, step: "signing" }));
 
       // Create SIWE message according to the specified format
+      console.log(
+        "📝 [SIWE FLOW] Getting message parameters from siweConfig...",
+      );
       const messageParams = await siweConfig.getMessageParams!();
+      console.log("📝 [SIWE FLOW] Message params received:", messageParams);
+
       const chainId = messageParams.chains[0];
       const issuedAt = new Date().toISOString();
+      console.log("📝 [SIWE FLOW] Chain ID:", chainId, "Issued At:", issuedAt);
 
       // Format message exactly as specified in the requirements
       const message = `I wants you to sign in with your Ethereum account:
@@ -95,16 +136,19 @@ Chain ID: ${chainId}
 Nonce: ${authState.nonce}
 Issued At: ${issuedAt}`;
 
-      console.log("SIWE Message:", message);
+      console.log("📝 [SIWE FLOW] Generated SIWE message:", message);
       setAuthState((prev) => ({ ...prev, message }));
 
       // Sign the message
+      console.log("✍️ [SIWE FLOW] Step 4: Requesting signature from wallet...");
       const signature = await signMessageAsync({ message });
-      console.log("Signature:", signature);
+      console.log("✅ [SIWE FLOW] Signature received:", signature);
 
+      console.log("🔄 [SIWE FLOW] Setting state to 'sending'...");
       setAuthState((prev) => ({ ...prev, signature, step: "sending" }));
 
       // Send data to bot using Telegram Mini App SDK
+      console.log("📦 [SIWE FLOW] Step 5: Preparing data for bot...");
       const dataToSend = JSON.stringify({
         type: "WALLET_LINK",
         payload: {
@@ -114,19 +158,28 @@ Issued At: ${issuedAt}`;
         },
       });
 
+      console.log("📤 [SIWE FLOW] Data to send:", dataToSend);
+
       if (sendData.isAvailable()) {
-        console.log("Sending data to bot:", dataToSend);
+        console.log("📡 [SIWE FLOW] Sending data to bot...");
         sendData(dataToSend);
+        console.log("✅ [SIWE FLOW] Data sent successfully!");
+
+        console.log("🔄 [SIWE FLOW] Setting state to 'completed'...");
         setAuthState((prev) => ({ ...prev, step: "completed" }));
 
         // Close mini app after sending data
+        console.log("⏰ [SIWE FLOW] Scheduling app close in 2 seconds...");
         setTimeout(() => {
           if (miniApp.close.isAvailable()) {
+            console.log("🔚 [SIWE FLOW] Closing mini app...");
             miniApp.close();
+          } else {
+            console.log("⚠️ [SIWE FLOW] miniApp.close not available");
           }
         }, 2000);
       } else {
-        console.error("sendData is not available");
+        console.error("❌ [SIWE FLOW] sendData is not available");
         const errorMessage =
           "sendData is not available - Mini app may not be launched from bot";
         if (popup.open.isAvailable()) {
@@ -143,7 +196,7 @@ Issued At: ${issuedAt}`;
         }));
       }
     } catch (error) {
-      console.error("SIWE flow error:", error);
+      console.error("❌ [SIWE FLOW] Error in SIWE flow:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       if (popup.open.isAvailable()) {
@@ -162,6 +215,8 @@ Issued At: ${issuedAt}`;
   };
 
   const connectWallet = () => {
+    console.log("🔗 [SIWE FLOW] User clicked Connect Wallet button");
+    console.log("🔗 [SIWE FLOW] Opening AppKit modal...");
     open();
   };
 
