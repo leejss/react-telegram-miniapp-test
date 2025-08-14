@@ -2,13 +2,7 @@ import { FC, useEffect, useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
 import { siweConfig } from "@/config/siwe";
-import {
-  initDataStartParam,
-  sendData,
-  miniApp,
-  popup,
-  initData,
-} from "@telegram-apps/sdk";
+import { sendData, miniApp, popup, initData } from "@telegram-apps/sdk";
 import { Page } from "@/components/Page";
 import {
   Button,
