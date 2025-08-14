@@ -1,12 +1,11 @@
 "use client";
 
-import { ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, cookieToInitialState, type Config } from "wagmi";
-import { createAppKit } from "@reown/appkit/react";
-import { config, networks, projectId, wagmiAdapter } from "@/config";
+import { config, networks, wagmiAdapter } from "@/config";
 import { siweConfig } from "@/config/siwe";
-import { base } from "@reown/appkit/networks";
+import { createAppKit } from "@reown/appkit/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactNode } from "react";
+import { WagmiProvider, cookieToInitialState, type Config } from "wagmi";
 
 const queryClient = new QueryClient();
 
@@ -24,16 +23,8 @@ createAppKit({
   adapters: [wagmiAdapter],
   projectId: import.meta.env.VITE_PROJECT_ID || "",
   networks: networks,
-  defaultNetwork: base,
   metadata,
   siweConfig,
-  features: {
-    analytics: true,
-    email: false,
-    socials: false,
-    swaps: false,
-    onramp: false,
-  },
 });
 
 export default function ContextProvider({
