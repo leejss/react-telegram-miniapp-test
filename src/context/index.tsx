@@ -34,9 +34,7 @@ export default function ContextProvider({
   children: ReactNode;
   cookies: string | null;
 }) {
-  // Calculate initial state for Wagmi SSR hydration
   const initialState = cookieToInitialState(config as Config, cookies);
-
   return (
     <WagmiProvider config={config as Config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

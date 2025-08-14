@@ -1,8 +1,8 @@
 // config/index.tsx
-import { cookieStorage, createStorage } from "wagmi";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { base, baseSepolia } from "@reown/appkit/networks";
+import { baseSepolia } from "@reown/appkit/networks";
 import type { Chain } from "viem";
+import { cookieStorage, createStorage } from "wagmi";
 
 // Read Project ID from environment variables
 export const projectId = import.meta.env.VITE_PROJECT_ID || "";
@@ -15,12 +15,12 @@ if (!projectId) {
 }
 
 // Define supported networks (Base for production, Base Sepolia for development)
-const isProd = import.meta.env.PROD;
-export const networks: [Chain, ...Chain[]] = [isProd ? base : baseSepolia];
+// const isProd = import.meta.env.PROD;
+export const networks: [Chain, ...Chain[]] = [baseSepolia];
 export const networkIds = networks.map((network) => network.id);
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({ storage: cookieStorage }),
-  ssr: true,
+  ssr: false,
   projectId,
   networks,
 });
