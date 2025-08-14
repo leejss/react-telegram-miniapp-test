@@ -34,24 +34,6 @@ export const AuthPage: FC = () => {
     console.log("🌐 [SIWE FLOW] URL search params:", window.location.search);
     console.log("🌐 [SIWE FLOW] URL hash:", window.location.hash);
 
-    // Alternative way to get start params
-    // const urlParams = new URLSearchParams(window.location.search);
-    // const startAppParam = urlParams.get("startapp");
-    // console.log("🔍 [SIWE FLOW] startapp from URL:", startAppParam);
-
-    // // Check Telegram WebApp data
-    // if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
-    //   const tgWebApp = (window as any).Telegram.WebApp;
-    //   console.log(
-    //     "📱 [SIWE FLOW] Telegram WebApp start param:",
-    //     tgWebApp.initDataUnsafe?.start_param,
-    //   );
-    //   console.log(
-    //     "📱 [SIWE FLOW] Telegram WebApp initData:",
-    //     tgWebApp.initData,
-    //   );
-    // }
-
     // Helper function to process start param
     const processStartParam = (param: string, source: string) => {
       try {
@@ -121,32 +103,27 @@ export const AuthPage: FC = () => {
         "⚠️ [SIWE FLOW] initData.startParam() returned undefined, checking URL params...",
       );
 
-      // Fallback: try to get from URL search params
+      // Fallback: try to get nonce directly from URL search params
       const urlParams = new URLSearchParams(window.location.search);
-      const startAppParam = urlParams.get("startapp");
+      const nonceParam = urlParams.get("nonce");
 
-      if (startAppParam) {
-        console.log("🔄 [SIWE FLOW] Found startapp in URL search params");
-        const processed = processStartParam(startAppParam, "URL search params");
-
-        if (!processed) {
-          // Show error popup if URL fallback also failed
-          if (popup.open.isAvailable()) {
-            popup.open({
-              title: "Error",
-              message: "Failed to parse start parameters from URL.",
-              buttons: [{ id: "ok", type: "default", text: "OK" }],
-            });
-          }
-        }
+      if (nonceParam) {
+        console.log(
+          "🔄 [SIWE FLOW] Found nonce in URL search params:",
+          nonceParam,
+        );
+        console.log("✅ [SIWE FLOW] Using nonce directly from URL params");
+        setAuthState((prev) => ({ ...prev, nonce: nonceParam }));
+        console.log("🔄 [SIWE FLOW] Auth state updated with nonce from URL");
       } else {
         console.log(
-          "⚠️ [SIWE FLOW] No startapp parameter found in URL search params either",
+          "⚠️ [SIWE FLOW] No nonce parameter found in URL search params either",
         );
         if (popup.open.isAvailable()) {
           popup.open({
             title: "Error",
-            message: "No start parameters found. Please launch from bot.",
+            message:
+              "No nonce parameter found. Please launch from bot with nonce.",
             buttons: [{ id: "ok", type: "default", text: "OK" }],
           });
         }
