@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, cookieToInitialState, type Config } from "wagmi";
 import { createAppKit } from "@reown/appkit/react";
 import { config, networks, projectId, wagmiAdapter } from "@/config";
-import { mainnet } from "@reown/appkit/networks";
+import { siweConfig } from "@/config/siwe";
+import { base } from "@reown/appkit/networks";
 
 const queryClient = new QueryClient();
 
@@ -27,9 +28,16 @@ if (!projectId) {
     adapters: [wagmiAdapter],
     projectId: projectId!,
     networks: networks,
-    defaultNetwork: mainnet,
+    defaultNetwork: base,
     metadata,
-    features: { analytics: true },
+    siweConfig,
+    features: {
+      analytics: true,
+      email: false,
+      socials: false,
+      swaps: false,
+      onramp: false,
+    },
   });
 }
 

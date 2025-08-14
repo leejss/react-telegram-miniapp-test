@@ -1,5 +1,6 @@
-// global.d.ts
-import "react";
+/// <reference types="vite/client" />
+
+import 'react';
 
 declare global {
   namespace JSX {
@@ -7,10 +8,7 @@ declare global {
       /**
        * The AppKit button web component. Registered globally by AppKit.
        */
-      "appkit-button": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement>,
-        HTMLElement
-      >;
+      'appkit-button': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
     }
   }
 }

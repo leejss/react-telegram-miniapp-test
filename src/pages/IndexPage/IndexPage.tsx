@@ -9,6 +9,16 @@ export const IndexPage: FC = () => {
     <Page back={false}>
       <List>
         <Section
+          header="Web3 Authentication"
+          footer="SIWE (Sign-In with Ethereum) integration for Telegram Mini Apps"
+        >
+          <Link to="/auth">
+            <Cell subtitle="Connect wallet and sign with Ethereum account">
+              🔐 SIWE Authentication
+            </Cell>
+          </Link>
+        </Section>
+        <Section
           header="Application Launch Data"
           footer="These pages help developer to learn more about current launch information"
         >
@@ -27,8 +37,20 @@ export const IndexPage: FC = () => {
               Theme Parameters
             </Cell>
           </Link>
+        </Section>
+        <Section
+          header="Web3 Features"
+          footer="Ethereum wallet integration examples"
+        >
           <Link to="/sign-message">
-            <Cell subtitle="Sign message">Sign Message</Cell>
+            <Cell subtitle="Sign arbitrary messages with connected wallet">
+              ✍️ Sign Message
+            </Cell>
+          </Link>
+          <Link to="/send-transaction">
+            <Cell subtitle="Send Ethereum transactions">
+              💸 Send Transaction
+            </Cell>
           </Link>
         </Section>
       </List>
